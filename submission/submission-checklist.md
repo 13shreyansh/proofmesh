@@ -9,16 +9,16 @@
 - [x] Public production deployment
 - [x] Eligibility attestation confirmed by entrant
 - [x] Devpost registration completed
-- [ ] Entrant signed into Aicoo
-- [ ] Aicoo API key created and stored server-side
-- [ ] Live Aicoo workflow verified
-- [ ] AI COO project-management use documented
+- [x] Entrant signed into Aicoo
+- [x] Aicoo API key created and stored server-side
+- [x] Live Aicoo workflow verified
+- [x] AI COO project-management use documented
 - [x] Public production access approved and enabled
 - [x] Public GitHub repository approved and created
 - [x] Final links added to Devpost copy
 - [x] Two-minute demo recorded
 - [x] Public demo video committed to the repository
 - [x] At least one complete-flow screenshot attached
-- [ ] Devpost fields completed and previewed
-- [ ] Final submission approved by entrant
-- [ ] Submission confirmation captured
+- [x] Devpost fields completed and previewed
+- [x] Final submission approved by entrant
+- [x] Submission confirmation captured

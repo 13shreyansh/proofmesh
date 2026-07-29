@@ -62,8 +62,12 @@ agent execution, and durable workspace model that make the protocol possible.
 
 ## Using AI COO for the build
 
-TO FINALIZE AFTER LIVE AICOO SETUP: describe the exact planning or project
-management task completed with Aicoo's COO.
+I used Aicoo's AI COO as the finalization coordinator for this solo build. I
+gave it the deadline and asked for a risk-ranked go/no-go plan spanning live API
+verification, public demo and repository checks, the two-minute video, truthful
+Devpost copy, media, links, eligibility, and final submission confirmation.
+That made the highest-risk gates explicit—live Aicoo behavior, reviewer access,
+and submission completeness—while I retained the final human decision.
 
 ## Challenges we ran into
 
