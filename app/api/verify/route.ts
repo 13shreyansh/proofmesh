@@ -42,6 +42,15 @@ const demoAgents: AgentResult[] = [
   },
 ];
 
+type VerificationPayload = {
+  mode: "live" | "demo";
+  runId: string;
+  coordinatorNote: string;
+  agents: AgentResult[];
+};
+
+let liveCache: { expiresAt: number; payload: VerificationPayload } | null = null;
+
 function extractText(payload: unknown): string {
   if (typeof payload === "string") {
     const chunks = payload
@@ -121,7 +130,12 @@ export async function POST(request: Request) {
     });
   }
 
+  if (liveCache && liveCache.expiresAt > Date.now()) {
+    return NextResponse.json(liveCache.payload);
+  }
+
   try {
+    const agents = demoAgents.map((agent) => ({ ...agent }));
     let coordinatorNote = "";
 
     if (handles.length === 3) {
@@ -145,8 +159,8 @@ export async function POST(request: Request) {
       results.forEach((result, index) => {
         const text = extractText(result);
         if (text) {
-          demoAgents[index] = {
-            ...demoAgents[index],
+          agents[index] = {
+            ...agents[index],
             evidence: text.slice(0, 145),
           };
         }
@@ -168,12 +182,19 @@ export async function POST(request: Request) {
         "Aicoo identified the unresolved rollback contradiction and routed it for human review.";
     }
 
-    return NextResponse.json({
+    const responsePayload: VerificationPayload = {
       mode: "live",
       runId: `PM-${Date.now().toString(36).toUpperCase().slice(-8)}`,
       coordinatorNote,
-      agents: demoAgents,
-    });
+      agents,
+    };
+
+    liveCache = {
+      expiresAt: Date.now() + 60_000,
+      payload: responsePayload,
+    };
+
+    return NextResponse.json(responsePayload);
   } catch {
     return NextResponse.json({
       mode: "demo",
