@@ -11,7 +11,7 @@ Built for the AICOO HACKATHON 2026.
 
 ## Try it
 
-- [Interactive demo](https://13shreyansh.github.io/proofmesh/)
+- [Interactive demo](https://proofmesh-aicoo.vercel.app/)
 - [Two-minute product walkthrough](submission/proofmesh-demo.mp4)
 
 ## Why it exists

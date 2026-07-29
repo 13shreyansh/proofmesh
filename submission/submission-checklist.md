@@ -6,7 +6,7 @@
 - [x] Deterministic reviewer-safe demo mode
 - [x] Social preview image
 - [x] Local build and lint validation
-- [x] Private production deployment
+- [x] Public production deployment
 - [x] Eligibility attestation confirmed by entrant
 - [x] Devpost registration completed
 - [ ] Entrant signed into Aicoo
@@ -17,7 +17,7 @@
 - [x] Public GitHub repository approved and created
 - [x] Final links added to Devpost copy
 - [x] Two-minute demo recorded
-- [ ] Demo uploaded to an accepted video host
+- [x] Public demo video committed to the repository
 - [x] At least one complete-flow screenshot attached
 - [ ] Devpost fields completed and previewed
 - [ ] Final submission approved by entrant

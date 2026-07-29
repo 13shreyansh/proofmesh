@@ -102,7 +102,7 @@ question and knows when to escalate.
 
 ## Links
 
-- Demo: https://13shreyansh.github.io/proofmesh/
+- Demo: https://proofmesh-aicoo.vercel.app/
 - Code: https://github.com/13shreyansh/proofmesh
 - Demo video: https://github.com/13shreyansh/proofmesh/raw/refs/heads/main/submission/proofmesh-demo.mp4
 

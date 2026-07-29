@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://proofmesh-aicoo.vercel.app"),
   title: "ProofMesh — Cross-agent release verification",
   description:
     "ProofMesh asks user-owned Aicoo agents to independently verify launch evidence and escalates only unresolved contradictions.",
