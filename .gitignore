@@ -44,3 +44,4 @@ next-env.d.ts
 # local recording masters (keep out of source repositories)
 /submission/*.aiff
 /submission/*.mp4
+/.openai/artifacts/
