@@ -1,0 +1,39 @@
+A release decision usually ends in a status meeting because Engineering,
+Security, and Support each hold a different piece of the truth. Centralizing all
+of that context is invasive and often impossible. ProofMesh turns the meeting
+into a permission-scoped verification protocol.
+
+Here, a release owner asks one precise question: is version 2.4 ready for
+production? Before contacting anyone, ProofMesh scopes the decision, its
+deadline, and the workspace boundary.
+
+When I run the verification, ProofMesh uses Aicoo to route bounded requests to
+owner-controlled agents for Engineering, Security, and Support. Each agent
+answers independently from only the context its owner permits. The underlying
+private source material is never centralized in ProofMesh.
+
+Engineering verifies that all 247 continuous-integration checks passed.
+Security verifies that the dependency audit has no critical findings. But
+Support finds a contradiction: the rollback playbook still references a
+retired queue.
+
+ProofMesh does not smooth over that disagreement or invent consensus. It links
+every verdict to its evidence, shows confidence, and lowers the overall proof
+score. That contradiction is the only part sent to a human release owner.
+
+Once the owner confirms the rollback playbook update, the Support verdict is
+verified and the proof score reaches one hundred. The decision is sealed with
+explicit human accountability.
+
+Every agent check and the final human decision keeps a receipt in the proof
+ledger, so the team can explain not only what shipped, but why it shipped.
+
+ProofMesh depends on Aicoo's agent messaging, scoped context, and persistent
+workspace. The server can route synchronous, idempotent requests directly to
+three permitted team agents. Aicoo's coordinator handles the same decision when
+individual contacts are not configured, while accumulate and tool discovery
+extend the protocol into durable records and connected systems.
+
+This is more than a chatbot. It is a trust layer for cross-functional work:
+agents collaborate, owners stay in control, and release confidence becomes a
+verifiable protocol.
