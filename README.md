@@ -9,6 +9,11 @@ unresolved contradiction to a human release owner.
 
 Built for the AICOO HACKATHON 2026.
 
+## Try it
+
+- [Interactive demo](https://13shreyansh.github.io/proofmesh/)
+- [Two-minute product walkthrough](submission/proofmesh-demo.mp4)
+
 ## Why it exists
 
 Critical launches usually end in a status meeting because no one system can

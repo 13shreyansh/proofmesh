@@ -102,9 +102,9 @@ question and knows when to escalate.
 
 ## Links
 
-- Demo: TO ADD AFTER PUBLIC DEPLOYMENT
-- Code: TO ADD AFTER REPOSITORY PUBLICATION
-- Demo video: TO ADD AFTER RECORDING
+- Demo: https://13shreyansh.github.io/proofmesh/
+- Code: https://github.com/13shreyansh/proofmesh
+- Demo video: https://github.com/13shreyansh/proofmesh/raw/refs/heads/main/submission/proofmesh-demo.mp4
 
 ## Team
 
