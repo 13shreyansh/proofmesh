@@ -452,6 +452,83 @@ a {
   line-height: 1.45;
 }
 
+.webmcp-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #bfc9d8;
+  border-radius: 7px;
+  background: #eef4fb;
+}
+
+.webmcp-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.webmcp-card-head strong {
+  font-size: 11px;
+}
+
+.webmcp-card-head > span:last-child {
+  color: #64758c;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.webmcp-status {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8b96a3;
+  box-shadow: 0 0 0 3px rgb(98 116 139 / 0.12);
+}
+
+.webmcp-status.ready {
+  background: #458865;
+  box-shadow: 0 0 0 3px rgb(69 136 101 / 0.14);
+}
+
+.webmcp-card > p {
+  margin: 8px 0 10px;
+  color: #596779;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.webmcp-events {
+  display: grid;
+  gap: 6px;
+}
+
+.webmcp-event {
+  padding-top: 6px;
+  border-top: 1px solid rgb(127 145 168 / 0.24);
+}
+
+.webmcp-event strong,
+.webmcp-event span {
+  display: block;
+}
+
+.webmcp-event strong {
+  overflow: hidden;
+  color: #34485f;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.webmcp-event span {
+  margin-top: 2px;
+  color: #6a7685;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
 .verification-panel {
   display: flex;
   flex-direction: column;
@@ -699,6 +776,15 @@ a {
   margin-top: 5px;
   color: #8b6551;
   font-size: 9px;
+}
+
+.decision-bar .resolution-proposal {
+  max-width: 520px;
+  padding: 6px 8px;
+  border-left: 2px solid #c58a2f;
+  color: #725124;
+  background: rgb(255 255 255 / 0.42);
+  line-height: 1.45;
 }
 
 .decision-bar button {

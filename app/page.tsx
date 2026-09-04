@@ -1,6 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type WebMcpTool = {
+  name: string;
+  title?: string;
+  description: string;
+  inputSchema?: Record<string, unknown>;
+  annotations?: {
+    readOnlyHint?: boolean;
+    untrustedContentHint?: boolean;
+  };
+  execute: (
+    input: Record<string, unknown>,
+    options: { signal: AbortSignal },
+  ) => Promise<unknown> | unknown;
+};
+
+declare global {
+  interface Document {
+    modelContext?: {
+      registerTool: (
+        tool: WebMcpTool,
+        options?: { signal?: AbortSignal },
+      ) => Promise<void>;
+    };
+  }
+}
 
 type AgentResult = {
   name: string;
@@ -17,6 +43,20 @@ type VerificationResponse = {
   runId: string;
   coordinatorNote: string;
   agents: AgentResult[];
+};
+
+type WorkspaceSnapshot = {
+  status: "idle" | "running" | "done";
+  agents: AgentResult[];
+  runId: string;
+  coordinatorNote: string;
+  resolved: boolean;
+  proposal: string;
+};
+
+type WebMcpEvent = {
+  label: string;
+  detail: string;
 };
 
 const DEFAULT_AGENTS: AgentResult[] = [
@@ -102,7 +142,32 @@ export default function Home() {
     "One contradiction needs a human owner before this release can ship.",
   );
   const [resolved, setResolved] = useState(false);
+  const [proposal, setProposal] = useState("");
   const [error, setError] = useState("");
+  const [webMcpReady, setWebMcpReady] = useState(false);
+  const [webMcpEvents, setWebMcpEvents] = useState<WebMcpEvent[]>([]);
+  const workspaceRef = useRef<WorkspaceSnapshot>({
+    status: "idle",
+    agents: DEFAULT_AGENTS,
+    runId: "PM-240729-A7",
+    coordinatorNote:
+      "One contradiction needs a human owner before this release can ship.",
+    resolved: false,
+    proposal: "",
+  });
+  const runVerificationRef = useRef<
+    (source?: "human" | "agent") => Promise<VerificationResponse>
+  >(async () => ({
+    mode: "demo",
+    runId: "PM-240729-A7",
+    coordinatorNote:
+      "One contradiction needs a human owner before this release can ship.",
+    agents: DEFAULT_AGENTS,
+  }));
+
+  function recordWebMcpEvent(label: string, detail: string) {
+    setWebMcpEvents((current) => [{ label, detail }, ...current].slice(0, 4));
+  }
 
   useEffect(() => {
     if (status !== "running") return;
@@ -118,11 +183,19 @@ export default function Home() {
     return Math.round((verified / agents.length) * 100);
   }, [agents, resolved]);
 
-  async function runVerification() {
+  async function runVerification(source: "human" | "agent" = "human") {
     setStatus("running");
     setResolved(false);
+    setProposal("");
     setStep(0);
     setError("");
+
+    if (source === "agent") {
+      recordWebMcpEvent(
+        "run_release_verification",
+        "Agent started the release evidence check.",
+      );
+    }
 
     try {
       const response = await fetch("/api/verify", {
@@ -132,29 +205,254 @@ export default function Home() {
       });
       if (!response.ok) throw new Error("Verification service unavailable");
       const result = (await response.json()) as VerificationResponse;
-      window.setTimeout(() => {
-        setAgents(result.agents);
-        setMode(result.mode);
-        setRunId(result.runId);
-        setCoordinatorNote(result.coordinatorNote);
-        setStatus("done");
-      }, 2450);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 2450));
+      setAgents(result.agents);
+      setMode(result.mode);
+      setRunId(result.runId);
+      setCoordinatorNote(result.coordinatorNote);
+      setStatus("done");
+      return result;
     } catch {
-      window.setTimeout(() => {
-        setAgents(DEFAULT_AGENTS);
-        setMode("demo");
-        setStatus("done");
-        setError("Live routing was unavailable, so the signed demo case was restored.");
-      }, 2450);
+      const fallback: VerificationResponse = {
+        mode: "demo",
+        runId: "PM-240729-A7",
+        coordinatorNote:
+          "One contradiction needs a human owner before this release can ship.",
+        agents: DEFAULT_AGENTS,
+      };
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 2450));
+      setAgents(fallback.agents);
+      setMode(fallback.mode);
+      setRunId(fallback.runId);
+      setCoordinatorNote(fallback.coordinatorNote);
+      setStatus("done");
+      setError("Live routing was unavailable, so the signed demo case was restored.");
+      return fallback;
     }
   }
+
+  useEffect(() => {
+    workspaceRef.current = {
+      status,
+      agents,
+      runId,
+      coordinatorNote,
+      resolved,
+      proposal,
+    };
+    runVerificationRef.current = runVerification;
+  });
 
   function resolveConflict() {
     setResolved(true);
     setCoordinatorNote(
       "Release owner confirmed the rollback playbook update. Decision sealed with a human approval.",
     );
+    recordWebMcpEvent(
+      "human_approval",
+      "Release owner reviewed the proposal and sealed the decision.",
+    );
   }
+
+  useEffect(() => {
+    const modelContext = document.modelContext;
+    if (!modelContext) return;
+
+    const controller = new AbortController();
+    const tools: WebMcpTool[] = [
+      {
+        name: "get_release_case",
+        title: "Inspect release case",
+        description:
+          "Read the active ProofMesh release case, its verification status, context boundary, and whether a human decision is required. This never changes release state.",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        annotations: { readOnlyHint: true },
+        execute: () => {
+          const current = workspaceRef.current;
+          recordWebMcpEvent(
+            "get_release_case",
+            "Agent inspected the active release and decision boundary.",
+          );
+          return {
+            runId: current.runId,
+            release: "2.4.0",
+            question: "Is the agent-routing update ready for production?",
+            status: current.status,
+            proofScore: current.resolved
+              ? 100
+              : Math.round(
+                  (current.agents.filter((agent) => agent.verdict === "verified")
+                    .length /
+                    current.agents.length) *
+                    100,
+                ),
+            humanDecisionRequired: !current.resolved,
+            contextBoundary: "Launch workspace",
+          };
+        },
+      },
+      {
+        name: "run_release_verification",
+        title: "Run release verification",
+        description:
+          "Run ProofMesh's independent Engineering, Security, and Support evidence checks for release 2.4.0. The verification mesh updates visibly in the page. This does not approve or ship the release.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scenario: {
+              type: "string",
+              enum: ["release-2.4"],
+              description: "The available deterministic release scenario.",
+            },
+          },
+          required: ["scenario"],
+          additionalProperties: false,
+        },
+        execute: async ({ scenario }) => {
+          if (scenario !== "release-2.4") {
+            throw new Error("Only the release-2.4 scenario is available.");
+          }
+          const result = await runVerificationRef.current("agent");
+          return {
+            runId: result.runId,
+            mode: result.mode,
+            verdicts: result.agents.map(({ owner, verdict, confidence, evidence, source }) => ({
+              owner,
+              verdict,
+              confidence,
+              evidence,
+              source,
+            })),
+            coordinatorNote: result.coordinatorNote,
+            finalization: "A human release owner must review and seal the decision.",
+          };
+        },
+      },
+      {
+        name: "get_release_conflicts",
+        title: "Inspect unresolved conflicts",
+        description:
+          "Return unresolved release contradictions with evidence labels and the human input needed to resolve them. This never changes release state.",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        annotations: { readOnlyHint: true },
+        execute: () => {
+          const current = workspaceRef.current;
+          const conflicts = current.resolved
+            ? []
+            : current.agents
+                .filter((agent) => agent.verdict !== "verified")
+                .map(({ owner, verdict, confidence, evidence, source }) => ({
+                  owner,
+                  verdict,
+                  confidence,
+                  evidence,
+                  source,
+                  needsHumanInput:
+                    "Confirm that the rollback playbook references the active queue.",
+                }));
+          recordWebMcpEvent(
+            "get_release_conflicts",
+            conflicts.length
+              ? "Agent found one contradiction requiring human review."
+              : "Agent confirmed that no unresolved contradiction remains.",
+          );
+          return { runId: current.runId, conflicts, humanDecisionRequired: conflicts.length > 0 };
+        },
+      },
+      {
+        name: "prepare_owner_resolution",
+        title: "Prepare resolution for review",
+        description:
+          "Stage a concise proposed resolution for the release owner to review in the ProofMesh UI. This does not approve, seal, or ship the release; only the human button can do that.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            resolution: {
+              type: "string",
+              minLength: 12,
+              maxLength: 300,
+              description:
+                "A factual proposed resolution addressing the active rollback-playbook contradiction.",
+            },
+          },
+          required: ["resolution"],
+          additionalProperties: false,
+        },
+        execute: ({ resolution }) => {
+          if (typeof resolution !== "string" || resolution.trim().length < 12) {
+            throw new Error("Provide a resolution of at least 12 characters.");
+          }
+          const safeResolution = resolution.trim().slice(0, 300);
+          setProposal(safeResolution);
+          recordWebMcpEvent(
+            "prepare_owner_resolution",
+            "Agent staged a proposal; human approval is still required.",
+          );
+          window.requestAnimationFrame(() => {
+            document.querySelector(".decision-bar")?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          });
+          return {
+            status: "staged_for_human_review",
+            resolution: safeResolution,
+            approved: false,
+            nextStep: "The release owner must review and click Approve & seal.",
+          };
+        },
+      },
+    ];
+
+    Promise.all(
+      tools.map((tool) => modelContext.registerTool(tool, { signal: controller.signal })),
+    )
+      .then(() => {
+        setWebMcpReady(true);
+        recordWebMcpEvent(
+          "WebMCP connected",
+          "Four structured tools are available to the browser agent.",
+        );
+      })
+      .catch(() => setWebMcpReady(false));
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!resolved || !document.modelContext) return;
+    const controller = new AbortController();
+    document.modelContext
+      .registerTool(
+        {
+          name: "get_decision_receipt",
+          title: "Read sealed decision receipt",
+          description:
+            "Read the evidence-linked ProofMesh decision receipt after the human release owner has approved it.",
+          inputSchema: { type: "object", properties: {}, additionalProperties: false },
+          annotations: { readOnlyHint: true },
+          execute: () => {
+            const current = workspaceRef.current;
+            recordWebMcpEvent(
+              "get_decision_receipt",
+              "Agent retrieved the human-sealed evidence receipt.",
+            );
+            return {
+              runId: current.runId,
+              release: "2.4.0",
+              decision: "approved_by_release_owner",
+              proofScore: 100,
+              resolution: current.proposal || "Rollback playbook update confirmed.",
+              evidenceSources: current.agents.map((agent) => agent.source),
+              sealedBy: "Human release owner",
+            };
+          },
+        },
+        { signal: controller.signal },
+      )
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [resolved]);
 
   return (
     <main>
@@ -192,7 +490,7 @@ export default function Home() {
           permissioned context, and escalates only the contradictions that need you.
         </p>
         <div className="hero-actions">
-          <button className="primary-button" onClick={runVerification}>
+          <button className="primary-button" onClick={() => void runVerification()}>
             Run the verification <ArrowIcon />
           </button>
           <a className="text-link" href="#how">
@@ -247,6 +545,32 @@ export default function Home() {
               <div>
                 <strong>Scoped by each owner</strong>
                 <span>Agents reveal answers, not private source context.</span>
+              </div>
+            </div>
+
+            <div className="webmcp-card" aria-live="polite">
+              <div className="webmcp-card-head">
+                <span className={`webmcp-status ${webMcpReady ? "ready" : "waiting"}`} />
+                <strong>{webMcpReady ? "WebMCP connected" : "WebMCP-ready"}</strong>
+                <span>{resolved ? "5 tools" : "4 tools"}</span>
+              </div>
+              <p>
+                The agent can inspect, verify, and prepare. Only you can seal the decision.
+              </p>
+              <div className="webmcp-events">
+                {webMcpEvents.length ? (
+                  webMcpEvents.map((event, index) => (
+                    <div className="webmcp-event" key={`${event.label}-${index}`}>
+                      <strong>{event.label}</strong>
+                      <span>{event.detail}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="webmcp-event">
+                    <strong>Shared release room</strong>
+                    <span>Open in a WebMCP-capable browser to connect an agent.</span>
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -314,13 +638,20 @@ export default function Home() {
               <div>
                 <span>{resolved ? "Decision sealed" : "Human decision required"}</span>
                 <strong>{coordinatorNote}</strong>
+                {!resolved && proposal && (
+                  <small className="resolution-proposal">
+                    Agent proposal — uncommitted: {proposal}
+                  </small>
+                )}
                 {error && <small>{error}</small>}
               </div>
               {status !== "running" &&
                 (resolved ? (
-                  <button onClick={runVerification}>Run again</button>
+                  <button onClick={() => void runVerification()}>Run again</button>
                 ) : (
-                  <button onClick={resolveConflict}>Resolve conflict</button>
+                  <button onClick={resolveConflict}>
+                    {proposal ? "Approve & seal" : "Resolve conflict"}
+                  </button>
                 ))}
             </div>
           </section>
